@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Core\Router;
 use Modules\Platform\Controllers\OnboardingController;
+use Modules\Platform\Controllers\PlatformAccessController;
 use Modules\Platform\Controllers\PlatformController;
 use Modules\Platform\Controllers\SchoolAdminActivationController;
 use Modules\Platform\Controllers\SubscriptionController;
@@ -33,4 +34,9 @@ $router->group([
     $router->get('/subscriptions',[SubscriptionController::class,'index']);
     $router->post('/subscriptions/{schoolId}/plan',[SubscriptionController::class,'changePlan']);
     $router->post('/subscriptions/{id}/status',[SubscriptionController::class,'status']);
+
+    $router->get('/access',[PlatformAccessController::class,'index']);
+    $router->post('/access/roles',[PlatformAccessController::class,'saveRole']);
+    $router->post('/access/roles/{id}',[PlatformAccessController::class,'saveRole']);
+    $router->post('/access/users/{id}/roles',[PlatformAccessController::class,'assignRoles']);
 });
