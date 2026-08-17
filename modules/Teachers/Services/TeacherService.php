@@ -100,6 +100,15 @@ class TeacherService extends BaseService
         AuditLog::record('staff.deleted', 'staff', $id, $before, null);
     }
 
+    public function sendAccountSetupEmail(string $email): void
+    {
+        $token = $this->authService->issuePasswordResetToken($email);
+        if ($token === null) return;
+        $tenant = Tenant::current();
+        $resetUrl = 'https://' . ($tenant?->subdomain ?? '') . '/reset-password?token=' . $token;
+        Mail::send($email, 'Set up your ' . ($tenant?->name ?? 'EduSasa') . ' account', '<p>An account has been created for you. Use the link below to set your password.</p><p><a href="' . e($resetUrl) . '">' . e($resetUrl) . '</a></p><p>This link expires in 60 minutes.</p>');
+    }
+
     private function createLinkedUser(string $email): int
     {
         $db = Database::getInstance();
@@ -118,15 +127,6 @@ class TeacherService extends BaseService
             $db->execute('INSERT IGNORE INTO user_roles (user_id, role_id) VALUES (:user_id, :role_id)', ['user_id' => $userId, 'role_id' => $role['id']]);
         }
         return $userId;
-    }
-
-    private function sendAccountSetupEmail(string $email): void
-    {
-        $token = $this->authService->issuePasswordResetToken($email);
-        if ($token === null) return;
-        $tenant = Tenant::current();
-        $resetUrl = 'https://' . ($tenant?->subdomain ?? '') . '/reset-password?token=' . $token;
-        Mail::send($email, 'Set up your school account', '<p>An account has been created for you. Use the link below to set your password.</p><p><a href="' . e($resetUrl) . '">' . e($resetUrl) . '</a></p><p>This link expires in 60 minutes.</p>');
     }
 
     private function blankToNull(mixed $value): mixed
