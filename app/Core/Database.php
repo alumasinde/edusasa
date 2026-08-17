@@ -19,8 +19,6 @@ class Database
             Config::env('DB_HOST', '127.0.0.1'),
             Config::env('DB_PORT', '3306'),
             Config::env('DB_DATABASE', 'edusasa'),
-            Config::env('DB_USERNAME', 'root'),
-            Config::env('DB_PASSWORD', ''),
             Config::env('DB_CHARSET', 'utf8mb4')
         );
 
