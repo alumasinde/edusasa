@@ -27,18 +27,22 @@ final class OnboardingController
 
     public function store(Request $request, array $params): Response
     {
+        $old = $request->all();
         try {
-            $school = $request->only([
-                'name', 'code', 'slug', 'email', 'phone', 'domain', 'timezone'
-            ]);
+            $school = $request->only(['name','code','slug','email','phone','domain','timezone']);
             $plan = trim((string) $request->input('plan'));
-            $id = $this->onboarding->start($school, $plan);
+            $adminEmail = trim((string) $request->input('admin_email'));
+            $result = $this->onboarding->start($school, $plan, $adminEmail);
 
-            return Response::redirect('/platform/schools?onboarded=' . $id);
+            return Response::view('platform.onboarding-success', [
+                'schoolId' => $result['school_id'],
+                'adminEmail' => $result['admin_email'],
+                'invitationToken' => $result['invitation_token'],
+            ]);
         } catch (\Throwable $e) {
             return Response::view('platform.onboarding', [
                 'plans' => $this->catalog->plans(false),
-                'old' => $request->all(),
+                'old' => $old,
                 'errors' => [$e->getMessage()],
             ], 422);
         }
