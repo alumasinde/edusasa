@@ -14,4 +14,7 @@ $router->group([
     $router->post('/schools', [PlatformController::class,'createSchool']);
     $router->patch('/schools/{id}/status', [PlatformController::class,'status']);
     $router->get('/schools/{id}/features/{feature}', [PlatformController::class,'feature']);
+    $router->get('/plans', [PlatformController::class,'plans']);
+    $router->get('/features', [PlatformController::class,'features']);
+    $router->put('/plans/{plan}/features/{feature}', [PlatformController::class,'setPlanFeature']);
 });
