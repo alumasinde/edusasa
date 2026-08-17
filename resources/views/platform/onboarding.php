@@ -24,17 +24,18 @@
 <body>
 <main>
     <h1>Onboard a school</h1>
-    <p>Create the school tenant and assign its initial plan.</p>
+    <p>Create the school tenant, assign its initial plan and prepare the first administrator invitation.</p>
     <?php if (!empty($errors)): ?><div class="errors"><?php foreach ($errors as $error): ?><div><?= htmlspecialchars((string)$error, ENT_QUOTES, 'UTF-8') ?></div><?php endforeach; ?></div><?php endif; ?>
     <form method="post" action="/platform/schools">
         <div class="grid">
             <label>School name <input name="name" required value="<?= htmlspecialchars((string)($old['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
             <label>School code <input name="code" value="<?= htmlspecialchars((string)($old['code'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
             <label>Slug <input name="slug" value="<?= htmlspecialchars((string)($old['slug'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
-            <label>Email <input type="email" name="email" value="<?= htmlspecialchars((string)($old['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+            <label>School email <input type="email" name="email" value="<?= htmlspecialchars((string)($old['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
             <label>Phone <input name="phone" value="<?= htmlspecialchars((string)($old['phone'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
             <label>Domain <input name="domain" value="<?= htmlspecialchars((string)($old['domain'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
             <label>Timezone <input name="timezone" value="<?= htmlspecialchars((string)($old['timezone'] ?? 'Africa/Nairobi'), ENT_QUOTES, 'UTF-8') ?>"></label>
+            <label>Administrator email <input type="email" name="admin_email" required value="<?= htmlspecialchars((string)($old['admin_email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
             <label>Plan
                 <select name="plan" required>
                     <option value="">Select a plan</option>
@@ -45,7 +46,7 @@
                 </select>
             </label>
         </div>
-        <button type="submit">Create school</button>
+        <button type="submit">Create school & prepare invitation</button>
     </form>
 </main>
 </body>
