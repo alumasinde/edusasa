@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Core\Router;
+use Modules\Platform\Controllers\OnboardingController;
 use Modules\Platform\Controllers\PlatformController;
 
 /** @var Router $router */
@@ -12,4 +13,6 @@ $router->group([
 ], function (Router $router): void {
     $router->get('/', [PlatformController::class, 'dashboard']);
     $router->get('/schools', [PlatformController::class, 'schoolPage']);
+    $router->get('/schools/new', [OnboardingController::class, 'create']);
+    $router->post('/schools', [OnboardingController::class, 'store']);
 });
