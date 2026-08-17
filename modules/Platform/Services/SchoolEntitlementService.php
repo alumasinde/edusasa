@@ -10,13 +10,13 @@ final class SchoolEntitlementService
 {
     public function __construct(private readonly Database $db) {}
 
-    /** Resolve effective plan features and school-specific overrides. */
+    /** Resolve effective feature and module access plus configured limits. */
     public function resolve(int $schoolId): array
     {
         if ($schoolId < 1) return ['features' => [], 'limits' => []];
 
         $rows = $this->db->select(
-            "SELECT f.code,pf.limits_json AS plan_limits,
+            "SELECT f.code,f.module_code,pf.limits_json AS plan_limits,
                     sfo.enabled AS override_enabled,sfo.limits_json AS override_limits
              FROM school_subscriptions ss
              INNER JOIN plan_features pf ON pf.plan_id=ss.plan_id
@@ -27,7 +27,7 @@ final class SchoolEntitlementService
              WHERE ss.school_id=:school_id
                AND ss.status IN ('trial','active')
                AND (ss.ends_at IS NULL OR ss.ends_at>NOW())
-             ORDER BY f.code",
+             ORDER BY f.module_code,f.code",
             ['school_id'=>$schoolId]
         );
 
@@ -35,7 +35,11 @@ final class SchoolEntitlementService
         $limits=[];
         foreach ($rows as $row) {
             $code=(string)$row['code'];
-            $features[$code]=$row['override_enabled']===null || (int)$row['override_enabled']===1;
+            $module=(string)$row['module_code'];
+            $enabled=$row['override_enabled']===null || (int)$row['override_enabled']===1;
+            $features[$code]=$enabled;
+            if ($enabled) $features[$module]=true;
+
             $json=$row['override_enabled']!==null ? $row['override_limits'] : $row['plan_limits'];
             if ($json!==null && $json!=='') {
                 $decoded=json_decode((string)$json,true);
@@ -45,7 +49,7 @@ final class SchoolEntitlementService
 
         // Overrides may enable a feature not included in the plan.
         $overrides=$this->db->select(
-            "SELECT f.code,sfo.enabled,sfo.limits_json
+            "SELECT f.code,f.module_code,sfo.enabled,sfo.limits_json
              FROM school_feature_overrides sfo
              INNER JOIN features f ON f.id=sfo.feature_id AND f.is_active=1
              WHERE sfo.school_id=:school_id
@@ -54,7 +58,10 @@ final class SchoolEntitlementService
         );
         foreach ($overrides as $row) {
             $code=(string)$row['code'];
-            $features[$code]=(int)$row['enabled']===1;
+            $module=(string)$row['module_code'];
+            $enabled=(int)$row['enabled']===1;
+            $features[$code]=$enabled;
+            $features[$module]=$enabled;
             if ($row['limits_json']!==null) {
                 $decoded=json_decode((string)$row['limits_json'],true);
                 if (is_array($decoded)) $limits[$code]=$decoded;
