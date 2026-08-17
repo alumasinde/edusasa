@@ -5,9 +5,13 @@ declare(strict_types=1);
 use App\Core\Router;
 use Modules\Platform\Controllers\OnboardingController;
 use Modules\Platform\Controllers\PlatformController;
+use Modules\Platform\Controllers\SchoolAdminActivationController;
 use Modules\Platform\Controllers\SubscriptionController;
 
 /** @var Router $router */
+$router->get('/school-admin/setup', [SchoolAdminActivationController::class, 'create']);
+$router->post('/school-admin/setup', [SchoolAdminActivationController::class, 'store']);
+
 $router->group([
     'prefix'=>'/platform',
     'middleware'=>['platform_host','platform_auth'],
