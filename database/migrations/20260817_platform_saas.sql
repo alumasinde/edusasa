@@ -1,0 +1,148 @@
+-- EduSasa platform/SaaS foundation.
+-- MySQL 8+, utf8mb4. Run once after the base schema.
+
+CREATE TABLE IF NOT EXISTS platform_users (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    email VARCHAR(190) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    status ENUM('active','suspended','disabled') NOT NULL DEFAULT 'active',
+    last_login_at DATETIME NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS plans (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(80) NOT NULL UNIQUE,
+    name VARCHAR(120) NOT NULL,
+    description TEXT NULL,
+    price DECIMAL(12,2) NOT NULL DEFAULT 0,
+    billing_interval ENUM('monthly','quarterly','annual','one_time') NOT NULL DEFAULT 'monthly',
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS features (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(120) NOT NULL UNIQUE,
+    name VARCHAR(160) NOT NULL,
+    module_code VARCHAR(100) NOT NULL,
+    description TEXT NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_features_module (module_code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS plan_features (
+    plan_id BIGINT UNSIGNED NOT NULL,
+    feature_id BIGINT UNSIGNED NOT NULL,
+    limits_json JSON NULL,
+    PRIMARY KEY (plan_id, feature_id),
+    CONSTRAINT fk_plan_features_plan FOREIGN KEY (plan_id) REFERENCES plans(id) ON DELETE CASCADE,
+    CONSTRAINT fk_plan_features_feature FOREIGN KEY (feature_id) REFERENCES features(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS schools (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(80) NOT NULL UNIQUE,
+    name VARCHAR(190) NOT NULL,
+    slug VARCHAR(190) NOT NULL UNIQUE,
+    email VARCHAR(190) NULL,
+    phone VARCHAR(40) NULL,
+    domain VARCHAR(190) NULL UNIQUE,
+    status ENUM('pending','active','suspended','archived') NOT NULL DEFAULT 'pending',
+    timezone VARCHAR(80) NOT NULL DEFAULT 'Africa/Nairobi',
+    settings_json JSON NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_schools_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS school_subscriptions (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    school_id BIGINT UNSIGNED NOT NULL,
+    plan_id BIGINT UNSIGNED NOT NULL,
+    status ENUM('trial','active','past_due','suspended','cancelled','expired') NOT NULL DEFAULT 'trial',
+    starts_at DATETIME NOT NULL,
+    trial_ends_at DATETIME NULL,
+    renews_at DATETIME NULL,
+    ends_at DATETIME NULL,
+    external_reference VARCHAR(190) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_subscription_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE,
+    CONSTRAINT fk_subscription_plan FOREIGN KEY (plan_id) REFERENCES plans(id),
+    INDEX idx_subscription_school_status (school_id, status),
+    INDEX idx_subscription_renewal (renews_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS school_feature_overrides (
+    school_id BIGINT UNSIGNED NOT NULL,
+    feature_id BIGINT UNSIGNED NOT NULL,
+    enabled TINYINT(1) NOT NULL,
+    limits_json JSON NULL,
+    reason VARCHAR(255) NULL,
+    expires_at DATETIME NULL,
+    PRIMARY KEY (school_id, feature_id),
+    CONSTRAINT fk_override_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE,
+    CONSTRAINT fk_override_feature FOREIGN KEY (feature_id) REFERENCES features(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS platform_audit_logs (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    platform_user_id BIGINT UNSIGNED NULL,
+    school_id BIGINT UNSIGNED NULL,
+    action VARCHAR(120) NOT NULL,
+    resource_type VARCHAR(100) NULL,
+    resource_id BIGINT UNSIGNED NULL,
+    metadata_json JSON NULL,
+    ip_address VARCHAR(45) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_platform_audit_school (school_id, created_at),
+    INDEX idx_platform_audit_user (platform_user_id, created_at),
+    INDEX idx_platform_audit_action (action, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO plans (code,name,description,price,billing_interval,sort_order)
+VALUES
+('starter','Starter','Essential school operations',0,'monthly',10),
+('standard','Standard','Finance, exams, attendance, reports and communication',0,'monthly',20),
+('premium','Premium','Portals and advanced operations',0,'monthly',30),
+('enterprise','Enterprise','Automation, governance, integrations and multi-campus',0,'monthly',40)
+ON DUPLICATE KEY UPDATE name=VALUES(name), description=VALUES(description), sort_order=VALUES(sort_order);
+
+INSERT INTO features (code,name,module_code,description)
+VALUES
+('academic.core','Academic management','Academic','Years, terms, classes, streams and subjects'),
+('students.core','Student management','Students','Student records and admissions'),
+('attendance.core','Attendance','Attendance','Daily attendance and summaries'),
+('teachers.core','Teacher management','Teachers','Staff and teaching assignments'),
+('fees.core','Fees and payments','Fees','Fees, invoices, payments and receipts'),
+('exams.core','Exams and grading','Exams','Assessment and grading workflows'),
+('reports.core','Reports','Reports','Operational and management reports'),
+('communication.core','Communication','Communication','Notifications and messaging'),
+('parent_portal.core','Parent portal','ParentPortal','Parent-facing services'),
+('student_portal.core','Student portal','StudentPortal','Student-facing services'),
+('timetable.core','Timetable engine','Timetable','Constraint-aware timetable generation'),
+('automation.core','Automation','Automation','Advanced automated workflows'),
+('api.core','API integrations','API','External integrations and API access'),
+('multicampus.core','Multi-campus','Platform','Multiple campuses under one organization')
+ON DUPLICATE KEY UPDATE name=VALUES(name), module_code=VALUES(module_code), description=VALUES(description);
+
+INSERT IGNORE INTO plan_features(plan_id,feature_id)
+SELECT p.id,f.id FROM plans p CROSS JOIN features f
+WHERE p.code='starter' AND f.code IN ('academic.core','students.core','attendance.core','teachers.core');
+INSERT IGNORE INTO plan_features(plan_id,feature_id)
+SELECT p.id,f.id FROM plans p CROSS JOIN features f
+WHERE p.code='standard' AND f.code IN ('academic.core','students.core','attendance.core','teachers.core','fees.core','exams.core','reports.core','communication.core');
+INSERT IGNORE INTO plan_features(plan_id,feature_id)
+SELECT p.id,f.id FROM plans p CROSS JOIN features f
+WHERE p.code='premium' AND f.code IN ('academic.core','students.core','attendance.core','teachers.core','fees.core','exams.core','reports.core','communication.core','parent_portal.core','student_portal.core','timetable.core');
+INSERT IGNORE INTO plan_features(plan_id,feature_id)
+SELECT p.id,f.id FROM plans p CROSS JOIN features f
+WHERE p.code='enterprise';
