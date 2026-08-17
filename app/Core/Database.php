@@ -19,6 +19,8 @@ class Database
             Config::env('DB_HOST', '127.0.0.1'),
             Config::env('DB_PORT', '3306'),
             Config::env('DB_DATABASE', 'edusasa'),
+            Config::env('DB_USERNAME', 'root'),
+            Config::env('DB_PASSWORD', ''),
             Config::env('DB_CHARSET', 'utf8mb4')
         );
 
@@ -58,6 +60,18 @@ class Database
         return $row === false ? null : $row;
     }
 
+    /** Backward-compatible semantic alias used by services. */
+    public function fetchAll(string $sql, array $params = []): array
+    {
+        return $this->select($sql, $params);
+    }
+
+    /** Backward-compatible semantic alias used by services. */
+    public function fetchOne(string $sql, array $params = []): ?array
+    {
+        return $this->selectOne($sql, $params);
+    }
+
     public function insert(string $sql, array $params = []): string
     {
         $this->query($sql, $params);
@@ -67,6 +81,18 @@ class Database
     public function execute(string $sql, array $params = []): int
     {
         return $this->query($sql, $params)->rowCount();
+    }
+
+    /** Execute an UPDATE statement. */
+    public function update(string $sql, array $params = []): int
+    {
+        return $this->execute($sql, $params);
+    }
+
+    /** Execute a DELETE statement. */
+    public function delete(string $sql, array $params = []): int
+    {
+        return $this->execute($sql, $params);
     }
 
     public function transaction(callable $callback): mixed
