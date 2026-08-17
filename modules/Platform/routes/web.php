@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Core\Router;
 use Modules\Platform\Controllers\OnboardingController;
 use Modules\Platform\Controllers\PlatformController;
+use Modules\Platform\Controllers\SubscriptionController;
 
 /** @var Router $router */
 $router->group([
@@ -21,8 +22,11 @@ $router->group([
     $router->post('/plans',[PlatformController::class,'savePlan']);
     $router->post('/plans/{id}',[PlatformController::class,'savePlan']);
     $router->post('/plans/{plan}/features/{feature}',[PlatformController::class,'setPlanFeature']);
-
     $router->get('/schools/{id}/entitlements',[PlatformController::class,'schoolEntitlementsPage']);
     $router->post('/schools/{id}/entitlements',[PlatformController::class,'saveSchoolOverride']);
     $router->delete('/schools/{id}/entitlements',[PlatformController::class,'removeSchoolOverride']);
+
+    $router->get('/subscriptions',[SubscriptionController::class,'index']);
+    $router->post('/subscriptions/{schoolId}/plan',[SubscriptionController::class,'changePlan']);
+    $router->post('/subscriptions/{id}/status',[SubscriptionController::class,'status']);
 });
