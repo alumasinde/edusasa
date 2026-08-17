@@ -1,0 +1,5 @@
+<?php
+
+declare(strict_types=1);
+namespace App\Core;
+final class Auth { public function __construct(private readonly Database $db){} public function check():bool{return Session::has('user_id');} public function id():?int{$id=Session::get('user_id');return $id===null?null:(int)$id;} public function user():?array{if(!$this->check())return null;return $this->db->selectOne('SELECT * FROM users WHERE id = :id AND deleted_at IS NULL',['id'=>$this->id()]);} public function login(int $userId):void{Session::regenerate();Session::set('user_id',$userId);Session::set('school_id',Tenant::current()?->id);} public function logout():void{Session::destroy();} public function roles():array{return $this->check()?array_column($this->db->select('SELECT r.name FROM roles r INNER JOIN user_roles ur ON ur.role_id=r.id WHERE ur.user_id=:id',['id'=>$this->id()]),'name'):[];} public function hasRole(string $role):bool{return in_array($role,$this->roles(),true);} public function hasAnyRole(array $roles):bool{return array_intersect($roles,$this->roles())!==[];} }
