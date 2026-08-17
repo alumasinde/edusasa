@@ -22,6 +22,16 @@ final class PlanCatalogService
         );
     }
 
+    public function findByCode(string $code): ?array
+    {
+        $code = trim($code);
+        if ($code === '') return null;
+        return $this->db->selectOne(
+            'SELECT id,code,name,description,price,billing_interval,is_active,sort_order FROM plans WHERE code=:code AND is_active=1',
+            ['code' => $code]
+        );
+    }
+
     public function features(?string $module = null): array
     {
         if ($module !== null && trim($module) !== '') {
