@@ -18,6 +18,29 @@ final class PlatformController
         private readonly PlanCatalogService $catalog,
     ) {}
 
+    public function dashboard(Request $request, array $params): Response
+    {
+        $schools = $this->schools->list();
+        $plans = $this->catalog->plans(false);
+        $stats = [
+            'Total schools' => count($schools),
+            'Active schools' => count(array_filter($schools, static fn(array $s): bool => ($s['status'] ?? '') === 'active')),
+            'Pending schools' => count(array_filter($schools, static fn(array $s): bool => ($s['status'] ?? '') === 'pending')),
+            'Suspended schools' => count(array_filter($schools, static fn(array $s): bool => ($s['status'] ?? '') === 'suspended')),
+            'Available plans' => count($plans),
+        ];
+        return Response::view('platform.dashboard', compact('stats', 'plans'));
+    }
+
+    public function schoolPage(Request $request, array $params): Response
+    {
+        $schools = $this->schools->list([
+            'status' => $request->input('status'),
+            'search' => $request->input('search'),
+        ]);
+        return Response::view('platform.schools', compact('schools'));
+    }
+
     public function schools(Request $request, array $params): Response
     {
         return Response::json(['success'=>true,'data'=>$this->schools->list([
