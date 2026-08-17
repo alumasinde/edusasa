@@ -29,7 +29,6 @@ final class SchoolAdminActivationService
         $firstName = trim($firstName);
         $lastName = trim($lastName);
         $token = trim($token);
-
         if ($firstName === '' || $lastName === '') throw new InvalidArgumentException('First name and last name are required.');
         if ($password !== $confirmation) throw new InvalidArgumentException('Passwords do not match.');
         $this->validatePassword($password);
@@ -42,7 +41,6 @@ final class SchoolAdminActivationService
                  WHERE i.token_hash=:token_hash LIMIT 1 FOR UPDATE',
                 ['token_hash' => hash('sha256', $token)]
             );
-
             if ($invitation === null) throw new InvalidArgumentException('This invitation is invalid or has expired.');
             if ($invitation['accepted_at'] !== null) throw new InvalidArgumentException('This invitation has already been used.');
             if (strtotime((string) $invitation['expires_at']) <= time()) throw new InvalidArgumentException('This invitation has expired.');
@@ -55,7 +53,9 @@ final class SchoolAdminActivationService
             }
             if ($passwordColumn === null) throw new RuntimeException('Users table has no supported password column.');
 
-            $existing = $db->selectOne('SELECT id FROM users WHERE email=:email AND school_id=:school_id AND deleted_at IS NULL LIMIT 1', [
+            $emailWhere = 'email=:email AND school_id=:school_id';
+            if (in_array('deleted_at', $columns, true)) $emailWhere .= ' AND deleted_at IS NULL';
+            $existing = $db->selectOne("SELECT id FROM users WHERE {$emailWhere} LIMIT 1", [
                 'email' => $invitation['email'], 'school_id' => $invitation['school_id'],
             ]);
             if ($existing !== null) throw new InvalidArgumentException('An account already exists for this administrator.');
@@ -87,7 +87,7 @@ final class SchoolAdminActivationService
 
             $db->execute('UPDATE school_admin_invitations SET accepted_at=NOW() WHERE id=:id', ['id'=>$invitation['id']]);
             $db->execute("UPDATE schools SET status='active' WHERE id=:id AND status='pending'", ['id'=>$invitation['school_id']]);
-            $db->execute('INSERT INTO platform_audit_logs(school_id,action,resource_type,resource_id,metadata_json) VALUES(:school_id,:action,:type,:resource_id,:metadata)', [
+            $db->insert('INSERT INTO platform_audit_logs(school_id,action,resource_type,resource_id,metadata_json) VALUES(:school_id,:action,:type,:resource_id,:metadata)', [
                 'school_id'=>$invitation['school_id'], 'action'=>'school_admin.activated', 'type'=>'user', 'resource_id'=>$userId,
                 'metadata'=>json_encode(['email'=>$invitation['email']], JSON_THROW_ON_ERROR),
             ]);
@@ -95,7 +95,6 @@ final class SchoolAdminActivationService
             Session::regenerate();
             Session::set('user_id', $userId);
             Session::set('school_id', (int) $invitation['school_id']);
-
             return ['user_id'=>$userId,'school_id'=>(int)$invitation['school_id'],'school_name'=>$invitation['school_name']];
         });
     }
@@ -104,7 +103,13 @@ final class SchoolAdminActivationService
     {
         $columns = $this->columns('roles');
         if (!in_array('name', $columns, true)) throw new RuntimeException('Roles table is missing the name column.');
-        $role = $db->selectOne("SELECT id FROM roles WHERE name IN ('School Admin','School Administrator','school_admin') ORDER BY id LIMIT 1");
+        $conditions = ['name IN (\'School Admin\',\'School Administrator\',\'school_admin\')'];
+        $params = [];
+        if (in_array('code', $columns, true)) $conditions[] = 'code=:role_code';
+        if (in_array('slug', $columns, true)) $conditions[] = 'slug=:role_slug';
+        if (in_array('code', $columns, true)) $params['role_code']='school_admin';
+        if (in_array('slug', $columns, true)) $params['role_slug']='school-admin';
+        $role = $db->selectOne('SELECT id FROM roles WHERE ' . implode(' OR ', $conditions) . ' ORDER BY id LIMIT 1', $params);
         if ($role !== null) return (int) $role['id'];
 
         $data = ['name'=>'School Admin'];
@@ -121,10 +126,7 @@ final class SchoolAdminActivationService
 
     private function columns(string $table): array
     {
-        $rows = $this->db->select(
-            'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=:table',
-            ['table'=>$table]
-        );
+        $rows = $this->db->select('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=:table', ['table'=>$table]);
         return array_map(static fn(array $row): string => (string) $row['COLUMN_NAME'], $rows);
     }
 
