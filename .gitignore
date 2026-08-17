@@ -1,0 +1,8 @@
+/vendor/
+/.env
+/storage/logs/*
+/storage/cache/*
+/storage/schools/*
+!/storage/logs/.gitkeep
+!/storage/cache/.gitkeep
+!/storage/schools/.gitkeep
