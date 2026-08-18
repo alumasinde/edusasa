@@ -2,9 +2,7 @@
 
 ## Bootstrap
 
-Visit `/setup` on the application to create the first Platform Super Admin.
-
-The bootstrap page is available only while `platform_users` is empty. The account is created with a hashed password and assigned the canonical `super_admin` role inside one database transaction.
+Visit `/setup` to create the first Platform Super Admin. The page is available only while `platform_users` is empty. The account is created with a hashed password and assigned the canonical `super_admin` role in one transaction.
 
 ## Platform login
 
@@ -18,7 +16,7 @@ Use `/platform/login` for subsequent Platform Admin sign-in. Successful authenti
 - Existing Platform RBAC is reused; no second role system is introduced.
 - The first account receives `super_admin`, not a school-scoped role.
 
-## First-time deployment flow
+## First deployment
 
 1. Run migrations.
 2. Open `/setup`.
@@ -26,6 +24,6 @@ Use `/platform/login` for subsequent Platform Admin sign-in. Successful authenti
 4. The account is signed in automatically.
 5. Create a school from Platform → Schools.
 6. Use the generated school-admin invitation to activate the School Admin account.
-7. School Admin then uses the normal school dashboard.
+7. School Admin uses the normal school dashboard.
 
 If platform users already exist, `/setup` is unavailable and `/platform/login` should be used.
