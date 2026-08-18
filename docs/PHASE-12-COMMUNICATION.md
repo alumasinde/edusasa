@@ -13,6 +13,8 @@ Communication is a tenant-scoped module for school announcements, notices, messa
 
 ## Data
 
-`020_communication.sql` creates `communications`, `communication_recipients` and `communication_templates`.
+`022_communication_phase12.sql` creates `communications`, `communication_recipients` and `communication_templates`.
 
 The module uses the existing `communication.core` feature entitlement. The next portal phases can consume the recipient inbox without duplicating communication data.
+
+External SMS/email delivery is intentionally not coupled to publication in this phase; the persisted recipient model is the integration point for later notification channels.
