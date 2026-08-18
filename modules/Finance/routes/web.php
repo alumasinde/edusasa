@@ -10,8 +10,11 @@ use Modules\Finance\Controllers\PaymentProviderController;
 use Modules\Finance\Controllers\PublicPaymentController;
 use Modules\Finance\Controllers\ReceiptController;
 use Modules\Finance\Controllers\FinanceAdjustmentController;
+use Modules\Finance\Controllers\FinanceReportController;
 $router->group(['prefix'=>'/finance','middleware'=>['tenant','auth','permission:finance.view,finance.manage']],function($router){
 $router->get('',[FinanceController::class,'index']);
+$router->get('/reports',[FinanceReportController::class,'index'],['permission:finance.reports']);
+$router->get('/reports/export',[FinanceReportController::class,'export'],['permission:finance.reports']);
 $router->get('/categories',[FinanceController::class,'categories'],['permission:finance.manage']);
 $router->post('/categories',[FinanceController::class,'storeCategory'],['csrf','permission:finance.manage']);
 $router->get('/invoices/create',[FinanceController::class,'createInvoice'],['permission:finance.manage']);
