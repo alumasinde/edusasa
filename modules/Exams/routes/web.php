@@ -6,6 +6,8 @@ declare(strict_types=1);
 
 use Modules\Exams\Controllers\ExaminationController;
 use Modules\Exams\Controllers\ExaminationPaperController;
+use Modules\Exams\Controllers\MarksEntryController;
+use Modules\Exams\Controllers\GradingController;
 
 $router->group([
     'prefix'=>'/exams',
@@ -18,6 +20,13 @@ $router->group([
     $router->post('/{id}/papers',[ExaminationPaperController::class,'store'],['csrf','permission:exams.papers.manage']);
     $router->post('/{id}/papers/status',[ExaminationPaperController::class,'status'],['csrf','permission:exams.papers.manage']);
     $router->post('/{id}/papers/delete',[ExaminationPaperController::class,'delete'],['csrf','permission:exams.papers.manage']);
+    $router->get('/{id}/papers/{paper_id}/marks',[MarksEntryController::class,'index'],['permission:exams.marks.view,exams.marks.manage']);
+    $router->post('/{id}/papers/{paper_id}/marks',[MarksEntryController::class,'save'],['csrf','permission:exams.marks.manage']);
+    $router->post('/{id}/papers/{paper_id}/marks/submit',[MarksEntryController::class,'submit'],['csrf','permission:exams.marks.manage']);
+    $router->post('/{id}/papers/{paper_id}/marks/lock',[MarksEntryController::class,'lock'],['csrf','permission:exams.marks.manage']);
+    $router->get('/{id}/grading',[GradingController::class,'index'],['permission:exams.grading.view,exams.grading.manage']);
+    $router->post('/{id}/grading/scales',[GradingController::class,'createScale'],['csrf','permission:exams.grading.manage']);
+    $router->post('/{id}/grading/calculate',[GradingController::class,'calculate'],['csrf','permission:exams.grading.manage']);
     $router->get('/{id}',[ExaminationController::class,'show']);
     $router->post('/{id}/status',[ExaminationController::class,'status'],['csrf','permission:exams.manage']);
 });
