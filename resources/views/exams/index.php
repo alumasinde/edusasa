@@ -1,0 +1,5 @@
+<?php $esc=fn($v)=>htmlspecialchars((string)$v,ENT_QUOTES,'UTF-8'); ?>
+<div class="page-header"><div><h1>Examinations</h1><p>Configure and manage school examination periods.</p></div><a href="/exams/create" class="btn btn-primary">Create Examination</a></div>
+<div class="card"><div class="table-wrap"><table><thead><tr><th>Examination</th><th>Type</th><th>Academic year</th><th>Term</th><th>Dates</th><th>Classes</th><th>Status</th><th></th></tr></thead><tbody>
+<?php foreach($exams as $exam): ?><tr><td><strong><?= $esc($exam['name']) ?></strong><br><small><?= $esc($exam['code']) ?></small></td><td><?= $esc($exam['exam_type']) ?></td><td><?= $esc($exam['academic_year_name']) ?></td><td><?= $esc($exam['term_name']) ?></td><td><?= $esc($exam['starts_on']) ?> → <?= $esc($exam['ends_on']) ?></td><td><?= (int)$exam['class_count'] ?></td><td><?= $esc(ucfirst($exam['status'])) ?></td><td><a href="/exams/<?= (int)$exam['id'] ?>">View</a></td></tr><?php endforeach; ?>
+<?php if(!$exams): ?><tr><td colspan="8">No examinations configured yet.</td></tr><?php endif; ?></tbody></table></div></div>
