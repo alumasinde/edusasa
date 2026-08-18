@@ -9,10 +9,8 @@ CREATE TABLE IF NOT EXISTS fee_categories (
     created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP NULL,
-    UNIQUE KEY uq_fee_category_school_code (school_id, code),
-    KEY idx_fee_category_school (school_id)
+    UNIQUE KEY uq_fee_category_school_code (school_id, code), KEY idx_fee_category_school (school_id)
 ) ENGINE=InnoDB;
-
 CREATE TABLE IF NOT EXISTS fee_structures (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     school_id BIGINT UNSIGNED NOT NULL,
@@ -25,10 +23,8 @@ CREATE TABLE IF NOT EXISTS fee_structures (
     created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP NULL,
-    KEY idx_fee_structure_school (school_id),
-    KEY idx_fee_structure_period (academic_year_id, term_id)
+    KEY idx_fee_structure_school (school_id), KEY idx_fee_structure_period (academic_year_id, term_id)
 ) ENGINE=InnoDB;
-
 CREATE TABLE IF NOT EXISTS fee_structure_items (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     fee_structure_id BIGINT UNSIGNED NOT NULL,
@@ -38,10 +34,8 @@ CREATE TABLE IF NOT EXISTS fee_structure_items (
     mandatory TINYINT(1) NOT NULL DEFAULT 1,
     created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    KEY idx_fee_item_structure (fee_structure_id),
-    KEY idx_fee_item_category (category_id)
+    KEY idx_fee_item_structure (fee_structure_id), KEY idx_fee_item_category (category_id)
 ) ENGINE=InnoDB;
-
 CREATE TABLE IF NOT EXISTS student_fee_accounts (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     school_id BIGINT UNSIGNED NOT NULL,
@@ -50,10 +44,8 @@ CREATE TABLE IF NOT EXISTS student_fee_accounts (
     opening_balance DECIMAL(14,2) NOT NULL DEFAULT 0,
     created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_student_fee_account (school_id, student_id),
-    KEY idx_fee_account_school (school_id)
+    UNIQUE KEY uq_student_fee_account (school_id, student_id), KEY idx_fee_account_school (school_id)
 ) ENGINE=InnoDB;
-
 CREATE TABLE IF NOT EXISTS fee_invoices (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     school_id BIGINT UNSIGNED NOT NULL,
@@ -72,11 +64,8 @@ CREATE TABLE IF NOT EXISTS fee_invoices (
     created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP NULL,
-    UNIQUE KEY uq_invoice_school_no (school_id, invoice_no),
-    KEY idx_invoice_school_student (school_id, student_id),
-    KEY idx_invoice_status (school_id, status)
+    UNIQUE KEY uq_invoice_school_no (school_id, invoice_no), KEY idx_invoice_school_student (school_id, student_id), KEY idx_invoice_status (school_id, status)
 ) ENGINE=InnoDB;
-
 CREATE TABLE IF NOT EXISTS fee_invoice_items (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     invoice_id BIGINT UNSIGNED NOT NULL,
@@ -88,7 +77,6 @@ CREATE TABLE IF NOT EXISTS fee_invoice_items (
     created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
     KEY idx_invoice_item_invoice (invoice_id)
 ) ENGINE=InnoDB;
-
 CREATE TABLE IF NOT EXISTS fee_payments (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     school_id BIGINT UNSIGNED NOT NULL,
@@ -104,23 +92,25 @@ CREATE TABLE IF NOT EXISTS fee_payments (
     created_by BIGINT UNSIGNED NULL,
     created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_payment_school_receipt (school_id, receipt_no),
-    KEY idx_payment_school_student (school_id, student_id),
-    KEY idx_payment_reference (school_id, reference)
+    UNIQUE KEY uq_payment_school_receipt (school_id, receipt_no), KEY idx_payment_school_student (school_id, student_id), KEY idx_payment_reference (school_id, reference)
 ) ENGINE=InnoDB;
-
 CREATE TABLE IF NOT EXISTS fee_payment_allocations (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     payment_id BIGINT UNSIGNED NOT NULL,
     invoice_id BIGINT UNSIGNED NOT NULL,
     amount DECIMAL(14,2) NOT NULL,
     created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_payment_invoice (payment_id, invoice_id),
-    KEY idx_allocation_invoice (invoice_id)
+    UNIQUE KEY uq_payment_invoice (payment_id, invoice_id), KEY idx_allocation_invoice (invoice_id)
 ) ENGINE=InnoDB;
-
-INSERT IGNORE INTO platform_permissions (code, name, module, created_at, updated_at) VALUES
-('finance.view','View finance','finance',NOW(),NOW()),
-('finance.manage','Manage finance','finance',NOW(),NOW()),
-('finance.payments','Record and manage payments','finance',NOW(),NOW()),
-('finance.reports','View finance reports','finance',NOW(),NOW());
+INSERT INTO platform_permissions (code, name, module_code, description) VALUES
+('finance.view','View finance','finance','View finance'),
+('finance.manage','Manage finance','finance','Manage fee structures and invoices'),
+('finance.payments','Record and manage payments','finance','Record and manage payments'),
+('finance.reports','View finance reports','finance','View finance reports')
+ON DUPLICATE KEY UPDATE name=VALUES(name), module_code=VALUES(module_code), description=VALUES(description);
+INSERT IGNORE INTO platform_role_permissions(role_id, permission_id)
+SELECT r.id,p.id FROM platform_roles r CROSS JOIN platform_permissions p
+WHERE r.code='super_admin' AND p.code IN ('finance.view','finance.manage','finance.payments','finance.reports');
+INSERT IGNORE INTO platform_role_permissions(role_id, permission_id)
+SELECT r.id,p.id FROM platform_roles r JOIN platform_permissions p ON p.code IN ('finance.view','finance.manage','finance.payments','finance.reports')
+WHERE r.code IN ('platform_admin','finance');
