@@ -9,6 +9,7 @@ use Modules\Exams\Controllers\ExaminationPaperController;
 use Modules\Exams\Controllers\MarksEntryController;
 use Modules\Exams\Controllers\GradingController;
 use Modules\Exams\Controllers\ResultPublishingController;
+use Modules\Exams\Controllers\ReportCardController;
 
 $router->group([
     'prefix'=>'/exams',
@@ -32,6 +33,9 @@ $router->group([
     $router->post('/{id}/results/approve',[ResultPublishingController::class,'approve'],['csrf','permission:exams.results.approve']);
     $router->post('/{id}/results/publish',[ResultPublishingController::class,'publish'],['csrf','permission:exams.results.publish']);
     $router->post('/{id}/results/return',[ResultPublishingController::class,'returnForCorrection'],['csrf','permission:exams.results.approve']);
+    $router->get('/{id}/report-cards',[ReportCardController::class,'index'],['permission:exams.report_cards.view,exams.report_cards.manage']);
+    $router->post('/{id}/report-cards/generate',[ReportCardController::class,'generate'],['csrf','permission:exams.report_cards.manage']);
+    $router->post('/{id}/report-cards/publish',[ReportCardController::class,'publish'],['csrf','permission:exams.report_cards.manage']);
     $router->get('/{id}',[ExaminationController::class,'show']);
     $router->post('/{id}/status',[ExaminationController::class,'status'],['csrf','permission:exams.manage']);
 });
