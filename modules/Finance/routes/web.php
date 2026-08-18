@@ -32,6 +32,7 @@ $router->group(['prefix'=>'/finance','middleware'=>['tenant','auth','permission:
     $router->get('/payment-methods',[PaymentChannelController::class,'index'],['permission:finance.manage']);
     $router->post('/payment-methods/save',[PaymentChannelController::class,'save'],['csrf','permission:finance.manage']);
     $router->post('/payment-methods/delete',[PaymentChannelController::class,'delete'],['csrf','permission:finance.manage']);
+    $router->get('/invoices/{id}/payment-link',[PublicPaymentController::class,'generateLink'],['permission:finance.payments']);
 });
 
 $router->post('/api/v1/finance/mpesa/callback/{school_id}/{token}',[PaymentProviderController::class,'callback']);
