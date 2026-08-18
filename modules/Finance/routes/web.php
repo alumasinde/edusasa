@@ -9,6 +9,7 @@ use Modules\Finance\Controllers\ReconciliationController;
 use Modules\Finance\Controllers\PaymentChannelController;
 use Modules\Finance\Controllers\PaymentProviderController;
 use Modules\Finance\Controllers\PublicPaymentController;
+use Modules\Finance\Controllers\ReceiptController;
 $router->group(['prefix'=>'/finance','middleware'=>['tenant','auth','permission:finance.view,finance.manage']],function($router){
     $router->get('',[FinanceController::class,'index']);
     $router->get('/categories',[FinanceController::class,'categories'],['permission:finance.manage']);
@@ -33,6 +34,7 @@ $router->group(['prefix'=>'/finance','middleware'=>['tenant','auth','permission:
     $router->post('/payment-methods/save',[PaymentChannelController::class,'save'],['csrf','permission:finance.manage']);
     $router->post('/payment-methods/delete',[PaymentChannelController::class,'delete'],['csrf','permission:finance.manage']);
     $router->get('/invoices/{id}/payment-link',[PublicPaymentController::class,'generateLink'],['permission:finance.payments']);
+    $router->get('/receipts/{id}',[ReceiptController::class,'show'],['permission:finance.view']);
 });
 
 $router->post('/api/v1/finance/mpesa/callback/{school_id}/{token}',[PaymentProviderController::class,'callback']);
