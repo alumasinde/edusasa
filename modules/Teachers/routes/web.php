@@ -6,7 +6,7 @@ declare(strict_types=1);
 use Modules\Teachers\Controllers\TeacherController;
 use Modules\Teachers\Controllers\TeacherSubjectMatrixController;
 
-$router->group(['prefix'=>'/teachers','middleware'=>['tenant','auth','permission:teachers.view,teachers.manage']],function($router){
+$router->group(['prefix'=>'/teachers','middleware'=>['tenant','auth','module:teachers','permission:teachers.view,teachers.manage']],function($router){
     $router->get('',[TeacherController::class,'index']);
     $router->get('/export',[TeacherController::class,'export'],['permission:teachers.manage']);
     $router->get('/subject-assignments/matrix',[TeacherSubjectMatrixController::class,'show'],['permission:teachers.manage']);
