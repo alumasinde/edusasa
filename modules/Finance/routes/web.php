@@ -35,12 +35,10 @@ $router->group(['prefix'=>'/finance','middleware'=>['tenant','auth','permission:
 });
 
 $router->post('/api/v1/finance/mpesa/callback/{school_id}/{token}',[PaymentProviderController::class,'callback']);
-
-// Public parent payment experience. Access is granted only by a signed, expiring invoice link.
 $router->get('/pay/{token}',[PublicPaymentController::class,'show']);
 $router->post('/pay/{token}',[PublicPaymentController::class,'initiate'],['csrf']);
 $router->get('/pay/status/{id}',[PublicPaymentController::class,'status']);
-$router->get('/pay/callback/mpesa',[PublicPaymentController::class,'mpesaCallback']);
+$router->post('/pay/callback/mpesa',[PublicPaymentController::class,'mpesaCallback']);
 $router->post('/pay/webhook/paystack',[PublicPaymentController::class,'paystackWebhook']);
 $router->get('/pay/callback/paystack',[PublicPaymentController::class,'paystackReturn']);
 $router->get('/pay/callback/pesapal',[PublicPaymentController::class,'pesapalCallback']);
