@@ -14,6 +14,9 @@
             "App\\Components\\": "app/Components/",
             "Modules\\": "modules/"
         },
+        "classmap": [
+            "app/Core/Exceptions.php"
+        ],
         "files": [
             "app/Core/Helpers.php"
         ]
