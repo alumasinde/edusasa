@@ -12,10 +12,13 @@ use Modules\Finance\Controllers\ReceiptController;
 use Modules\Finance\Controllers\FinanceAdjustmentController;
 use Modules\Finance\Controllers\FinanceReportController;
 use Modules\Finance\Controllers\FinanceControlController;
+use Modules\Finance\Controllers\FinanceIntegrityController;
 $router->group(['prefix'=>'/finance','middleware'=>['tenant','auth','permission:finance.view,finance.manage']],function($router){
 $router->get('',[FinanceController::class,'index']);
 $router->get('/reports',[FinanceReportController::class,'index'],['permission:finance.reports']);
 $router->get('/reports/export',[FinanceReportController::class,'export'],['permission:finance.reports']);
+$router->get('/integrity',[FinanceIntegrityController::class,'index'],['permission:finance.integrity']);
+$router->post('/integrity/scan',[FinanceIntegrityController::class,'scan'],['csrf','permission:finance.integrity']);
 $router->get('/controls',[FinanceControlController::class,'index'],['permission:finance.controls,finance.periods']);
 $router->post('/controls/periods',[FinanceControlController::class,'createPeriod'],['csrf','permission:finance.periods']);
 $router->post('/controls/periods/lock',[FinanceControlController::class,'lockPeriod'],['csrf','permission:finance.periods']);
