@@ -3,6 +3,7 @@
 declare(strict_types=1);
 /** @var \App\Core\Router $router */
 use Modules\Finance\Controllers\FinanceController;
+use Modules\Finance\Controllers\FeeStructureController;
 $router->group(['prefix'=>'/finance','middleware'=>['tenant','auth','permission:finance.view,finance.manage']],function($router){
     $router->get('',[FinanceController::class,'index']);
     $router->get('/categories',[FinanceController::class,'categories'],['permission:finance.manage']);
@@ -12,4 +13,9 @@ $router->group(['prefix'=>'/finance','middleware'=>['tenant','auth','permission:
     $router->get('/payments/create',[FinanceController::class,'createPayment'],['permission:finance.payments']);
     $router->post('/payments',[FinanceController::class,'storePayment'],['csrf','permission:finance.payments']);
     $router->get('/students',[FinanceController::class,'students'],['permission:finance.view']);
+    $router->get('/fee-structures',[FeeStructureController::class,'index'],['permission:finance.view']);
+    $router->get('/fee-structures/create',[FeeStructureController::class,'create'],['permission:finance.manage']);
+    $router->post('/fee-structures',[FeeStructureController::class,'store'],['csrf','permission:finance.manage']);
+    $router->post('/fee-structures/publish',[FeeStructureController::class,'publish'],['csrf','permission:finance.manage']);
+    $router->post('/fee-structures/generate',[FeeStructureController::class,'generate'],['csrf','permission:finance.manage']);
 });
