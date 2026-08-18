@@ -1,0 +1,4 @@
+<?php $layout='layouts.app'; ?>
+<h1>Attendance</h1><p class="muted">Your recorded attendance history.</p>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:var(--space-3);margin-top:var(--space-4)"><?php foreach(['present','absent','late','excused'] as $key): ?><div class="card"><div class="card-body"><div class="muted"><?= ucfirst($key) ?></div><h2><?= (int)($summary[$key]??0) ?></h2></div></div><?php endforeach; ?></div>
+<div class="card" style="margin-top:var(--space-4)"><div class="card-body"><table class="table"><thead><tr><th>Date</th><th>Status</th><th>Remarks</th></tr></thead><tbody><?php foreach($history as $row): ?><tr><td><?= e((string)$row['attendance_date']) ?></td><td><?= e(ucfirst((string)$row['status'])) ?></td><td><?= e((string)($row['remarks']??'')) ?></td></tr><?php endforeach; if(!$history): ?><tr><td colspan="3">No attendance records found.</td></tr><?php endif; ?></tbody></table></div></div>
