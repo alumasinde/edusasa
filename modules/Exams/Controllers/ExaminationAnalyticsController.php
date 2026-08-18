@@ -31,10 +31,13 @@ final class ExaminationAnalyticsController extends BaseController
     {
         try {
             $id = (int)$request->input('id', 0);
-            return Response::download(
+            return Response::binary(
                 $this->service->csv($id),
-                'examination-analytics-'.$id.'.csv',
-                'text/csv'
+                200,
+                [
+                    'Content-Type' => 'text/csv; charset=UTF-8',
+                    'Content-Disposition' => 'attachment; filename="examination-analytics-'.$id.'.csv"',
+                ]
             );
         } catch (RuntimeException $e) {
             return Response::html($e->getMessage(), 404);
