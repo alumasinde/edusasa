@@ -11,10 +11,17 @@ use Modules\Finance\Controllers\PublicPaymentController;
 use Modules\Finance\Controllers\ReceiptController;
 use Modules\Finance\Controllers\FinanceAdjustmentController;
 use Modules\Finance\Controllers\FinanceReportController;
+use Modules\Finance\Controllers\FinanceControlController;
 $router->group(['prefix'=>'/finance','middleware'=>['tenant','auth','permission:finance.view,finance.manage']],function($router){
 $router->get('',[FinanceController::class,'index']);
 $router->get('/reports',[FinanceReportController::class,'index'],['permission:finance.reports']);
 $router->get('/reports/export',[FinanceReportController::class,'export'],['permission:finance.reports']);
+$router->get('/controls',[FinanceControlController::class,'index'],['permission:finance.controls,finance.periods']);
+$router->post('/controls/periods',[FinanceControlController::class,'createPeriod'],['csrf','permission:finance.periods']);
+$router->post('/controls/periods/lock',[FinanceControlController::class,'lockPeriod'],['csrf','permission:finance.periods']);
+$router->post('/controls/periods/close',[FinanceControlController::class,'closePeriod'],['csrf','permission:finance.periods']);
+$router->post('/controls/payments/reverse',[FinanceControlController::class,'reversePayment'],['csrf','permission:finance.controls']);
+$router->post('/controls/invoices/void',[FinanceControlController::class,'voidInvoice'],['csrf','permission:finance.controls']);
 $router->get('/categories',[FinanceController::class,'categories'],['permission:finance.manage']);
 $router->post('/categories',[FinanceController::class,'storeCategory'],['csrf','permission:finance.manage']);
 $router->get('/invoices/create',[FinanceController::class,'createInvoice'],['permission:finance.manage']);
