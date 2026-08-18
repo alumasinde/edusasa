@@ -1,6 +1,6 @@
 # EduSasa database migrations
 
-The migration set is now canonical and ordered by dependency. Use the numbered SQL files in lexicographic order.
+The migration set is canonical and ordered by dependency. Use the numbered SQL files in lexicographic order.
 
 ```text
 000_schema_migrations.sql
@@ -15,28 +15,22 @@ The migration set is now canonical and ordered by dependency. Use the numbered S
 009_finance_payments.sql
 010_finance_controls.sql
 011_finance_integrity.sql
+020_teachers_phase10.sql
+021_timetable_phase11.sql
 ```
 
 ## Scope
 
-These migrations cover the modules that currently exist in `modules/`: Platform, Academic, Students, Teachers, Attendance and Finance. They include the tables used by the current codebase, including the complete Phase 5 finance engine.
-
-The old date-based Phase 5 migration files have been consolidated into this numbered set. The new files are additive and use `IF NOT EXISTS` where appropriate so an existing database can be brought into alignment without dropping application data.
+These migrations cover the platform, academic, students, teachers, attendance, finance and timetable modules. Phase 11 adds configurable teaching periods, timetable headers, schedule entries, timetable permissions and safe default periods for each school.
 
 ## Existing installations
 
-Take a database backup first. Apply the numbered migrations in order. Existing tables are preserved. If an older installation already has a table, its data is not deleted by these migrations.
+Take a database backup first. Apply the numbered migrations in order. Existing tables and data are preserved. Phase 11 is additive and does not delete teacher assignments or academic data.
 
-## New installations
+## Timetable generation
 
-Run every `.sql` file in numerical order. `000_schema_migrations.sql` creates the registry table; the application/deployment runner should record each filename after successful execution.
+The generator consumes class-specific `teacher_subjects` assignments from Phase 10. It distributes the requested periods across Monday–Friday while preventing teacher and class/stream collisions. Break periods are excluded. Double-period assignments are placed consecutively when capacity allows; any workload that cannot fit is reported instead of silently dropped.
 
 ## Naming convention
 
-Use:
-
-`NNN_<domain>_<purpose>.sql`
-
-Examples: `001_schools.sql`, `003_academic.sql`, `009_finance_payments.sql`.
-
-Do not return to date-based migration names for new schema changes.
+Use `NNN_<domain>_<purpose>.sql`. Do not return to date-based migration names for new schema changes.
