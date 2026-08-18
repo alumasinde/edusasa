@@ -1,0 +1,10 @@
+<?php $layout='layouts.app'; ?>
+<div style="display:flex;justify-content:space-between;align-items:center"><div><h1>Student Portal</h1><p class="muted">Your school information in one place.</p></div><a class="btn btn-outline" href="/student-portal/profile">Profile</a></div>
+<div class="card" style="margin-top:var(--space-4)"><div class="card-body"><strong><?= e($student['first_name'].' '.$student['last_name']) ?></strong><div class="muted"><?= e((string)$student['admission_no']) ?> · <?= e((string)($student['class_name']??'')) ?><?= !empty($student['stream_name'])?' · '.e((string)$student['stream_name']):'' ?></div></div></div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--space-3);margin-top:var(--space-4)">
+<div class="card"><div class="card-body"><div class="muted">Attendance</div><h2><?= (int)($attendance['present']??0) ?></h2><small>present days</small></div></div>
+<div class="card"><div class="card-body"><div class="muted">Outstanding fees</div><h2><?= number_format((float)($fees['outstanding']??0),2) ?></h2><small>KES</small></div></div>
+<div class="card"><div class="card-body"><div class="muted">Latest result</div><h2><?= e((string)($latest_results[0]['grade']??'—')) ?></h2><small><?= e((string)($latest_results[0]['examination_name']??'No published result')) ?></small></div></div>
+<div class="card"><div class="card-body"><div class="muted">Notifications</div><h2><?= count(array_filter($notifications,static fn($n)=>empty($n['read_at']))) ?></h2><small>unread</small></div></div>
+</div>
+<div style="display:flex;gap:var(--space-2);flex-wrap:wrap;margin-top:var(--space-4)"><a class="btn btn-primary" href="/student-portal/academics">Academics</a><a class="btn btn-outline" href="/student-portal/timetable">Timetable</a><a class="btn btn-outline" href="/student-portal/attendance">Attendance</a><a class="btn btn-outline" href="/student-portal/finance">Fees</a><a class="btn btn-outline" href="/student-portal/notifications">Notifications</a></div>
