@@ -8,6 +8,7 @@ use Modules\Finance\Controllers\StudentLedgerController;
 use Modules\Finance\Controllers\ReconciliationController;
 use Modules\Finance\Controllers\PaymentChannelController;
 use Modules\Finance\Controllers\PaymentProviderController;
+use Modules\Finance\Controllers\PublicPaymentController;
 $router->group(['prefix'=>'/finance','middleware'=>['tenant','auth','permission:finance.view,finance.manage']],function($router){
     $router->get('',[FinanceController::class,'index']);
     $router->get('/categories',[FinanceController::class,'categories'],['permission:finance.manage']);
@@ -33,5 +34,15 @@ $router->group(['prefix'=>'/finance','middleware'=>['tenant','auth','permission:
     $router->post('/payment-methods/delete',[PaymentChannelController::class,'delete'],['csrf','permission:finance.manage']);
 });
 
-// Public Safaricom callback. The per-transaction callback token authenticates the attempt.
 $router->post('/api/v1/finance/mpesa/callback/{school_id}/{token}',[PaymentProviderController::class,'callback']);
+
+// Public parent payment experience. Access is granted only by a signed, expiring invoice link.
+$router->get('/pay/{token}',[PublicPaymentController::class,'show']);
+$router->post('/pay/{token}',[PublicPaymentController::class,'initiate'],['csrf']);
+$router->get('/pay/status/{id}',[PublicPaymentController::class,'status']);
+$router->get('/pay/callback/mpesa',[PublicPaymentController::class,'mpesaCallback']);
+$router->post('/pay/webhook/paystack',[PublicPaymentController::class,'paystackWebhook']);
+$router->get('/pay/callback/paystack',[PublicPaymentController::class,'paystackReturn']);
+$router->get('/pay/callback/pesapal',[PublicPaymentController::class,'pesapalCallback']);
+$router->post('/pay/ipn/pesapal',[PublicPaymentController::class,'pesapalIpn']);
+$router->get('/pay/ipn/pesapal',[PublicPaymentController::class,'pesapalIpn']);
