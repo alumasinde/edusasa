@@ -5,10 +5,6 @@ ALTER TABLE teacher_subjects
     ADD COLUMN IF NOT EXISTS periods_per_week TINYINT UNSIGNED NULL AFTER stream_id,
     ADD COLUMN IF NOT EXISTS is_double TINYINT(1) NOT NULL DEFAULT 0 AFTER periods_per_week;
 
-ALTER TABLE teacher_subjects
-    ADD KEY IF NOT EXISTS idx_teacher_subject_class (school_id, class_id),
-    ADD KEY IF NOT EXISTS idx_teacher_subject_teacher (school_id, teacher_id);
-
 INSERT INTO permissions (name, label, module_key) VALUES
     ('teachers.view', 'View teachers & staff', 'teachers'),
     ('teachers.manage', 'Manage teachers & teaching assignments', 'teachers')
