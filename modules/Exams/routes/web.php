@@ -8,6 +8,7 @@ use Modules\Exams\Controllers\ExaminationController;
 use Modules\Exams\Controllers\ExaminationPaperController;
 use Modules\Exams\Controllers\MarksEntryController;
 use Modules\Exams\Controllers\GradingController;
+use Modules\Exams\Controllers\ResultPublishingController;
 
 $router->group([
     'prefix'=>'/exams',
@@ -27,6 +28,10 @@ $router->group([
     $router->get('/{id}/grading',[GradingController::class,'index'],['permission:exams.grading.view,exams.grading.manage']);
     $router->post('/{id}/grading/scales',[GradingController::class,'createScale'],['csrf','permission:exams.grading.manage']);
     $router->post('/{id}/grading/calculate',[GradingController::class,'calculate'],['csrf','permission:exams.grading.manage']);
+    $router->get('/{id}/results',[ResultPublishingController::class,'index'],['permission:exams.results.approve,exams.results.publish']);
+    $router->post('/{id}/results/approve',[ResultPublishingController::class,'approve'],['csrf','permission:exams.results.approve']);
+    $router->post('/{id}/results/publish',[ResultPublishingController::class,'publish'],['csrf','permission:exams.results.publish']);
+    $router->post('/{id}/results/return',[ResultPublishingController::class,'returnForCorrection'],['csrf','permission:exams.results.approve']);
     $router->get('/{id}',[ExaminationController::class,'show']);
     $router->post('/{id}/status',[ExaminationController::class,'status'],['csrf','permission:exams.manage']);
 });
