@@ -1,44 +1,42 @@
 # EduSasa database migrations
 
-Migrations are additive and must be applied in filename order after the base schema. A production deployment should record every applied filename in its migration runner and must never rely on manually skipping a migration because a table already exists.
+The migration set is now canonical and ordered by dependency. Use the numbered SQL files in lexicographic order.
+
+```text
+000_schema_migrations.sql
+001_schools.sql
+002_platform_access.sql
+003_academic.sql
+004_students.sql
+005_teachers.sql
+006_attendance.sql
+007_finance.sql
+008_finance_billing.sql
+009_finance_payments.sql
+010_finance_controls.sql
+011_finance_integrity.sql
+```
+
+## Scope
+
+These migrations cover the modules that currently exist in `modules/`: Platform, Academic, Students, Teachers, Attendance and Finance. They include the tables used by the current codebase, including the complete Phase 5 finance engine.
+
+The old date-based Phase 5 migration files have been consolidated into this numbered set. The new files are additive and use `IF NOT EXISTS` where appropriate so an existing database can be brought into alignment without dropping application data.
+
+## Existing installations
+
+Take a database backup first. Apply the numbered migrations in order. Existing tables are preserved. If an older installation already has a table, its data is not deleted by these migrations.
+
+## New installations
+
+Run every `.sql` file in numerical order. `000_schema_migrations.sql` creates the registry table; the application/deployment runner should record each filename after successful execution.
 
 ## Naming convention
 
-New product migrations use:
+Use:
 
-`YYYYMMDD_phaseN_<feature>.sql`
+`NNN_<domain>_<purpose>.sql`
 
-Older numeric/legacy migrations are retained for compatibility and must not be renamed or deleted after they have been applied to a production installation.
+Examples: `001_schools.sql`, `003_academic.sql`, `009_finance_payments.sql`.
 
-## Platform foundation
-
-1. `20260817_platform_saas.sql` — platform users, schools, plans, features, subscriptions and overrides.
-2. `20260817_platform_onboarding.sql` — school-admin invitations and activation data.
-3. `20260817_platform_rbac.sql` — platform roles, permissions and role assignments.
-
-## Phase 5 — Finance
-
-4. `20260818_phase5_finance_foundation.sql` — fee categories, fee structures, student fee accounts, invoices, invoice items, payments and allocations.
-5. `20260818_phase5_fee_billing_engine.sql` — fee targeting and bulk billing batches.
-6. `20260818_phase5_payment_reconciliation.sql` — daily payment reconciliation records.
-7. `20260818_phase5_payment_channels_and_schema_alignment.sql` — school-configurable payment channels and compatibility alignment for fee-billing columns/tables.
-8. `20260818_phase5_payment_provider_engine.sql` — provider transactions and provider callback/event storage for M-Pesa and other online providers.
-9. `20260818_phase5_receipts_and_payment_notifications.sql` — official receipts and notification delivery records.
-10. `20260818_phase5_adjustments_and_refunds.sql` — discounts, waivers, credits and refund workflow data.
-11. `20260818_phase5_finance_controls.sql` — financial periods, controlled reversals, invoice voids and control audit records.
-12. `20260818_phase5_finance_integrity.sql` — integrity-scan metadata and finance-integrity permission.
-13. `20260818_phase5_migration_alignment.sql` — final Phase 5 permission backfill/alignment for installations that applied feature migrations partially or out of order.
-
-## Legacy migrations
-
-`029_add_enterprise_plan.sql` is retained because it belongs to the existing migration history. Do not rename or remove it in production.
-
-## Feature-to-migration rule
-
-Some Phase 5 features intentionally do not have their own migration because they are application layers over existing finance tables. This includes finance reports, student statements/ledger views, parent payment pages and provider checkout pages.
-
-## Safety
-
-All Phase 5 migrations are intended for MySQL 8+. Take a database backup before applying migrations to an existing production school. The final alignment migration is additive and only backfills permissions; it does not delete financial data or remove role assignments.
-
-See `docs/PHASE-5-MIGRATION-AUDIT.md` for the complete feature-to-migration audit and known limitations.
+Do not return to date-based migration names for new schema changes.
