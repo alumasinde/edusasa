@@ -6,6 +6,7 @@ use Modules\Finance\Controllers\FinanceController;
 use Modules\Finance\Controllers\FeeStructureController;
 use Modules\Finance\Controllers\StudentLedgerController;
 use Modules\Finance\Controllers\ReconciliationController;
+use Modules\Finance\Controllers\PaymentChannelController;
 $router->group(['prefix'=>'/finance','middleware'=>['tenant','auth','permission:finance.view,finance.manage']],function($router){
     $router->get('',[FinanceController::class,'index']);
     $router->get('/categories',[FinanceController::class,'categories'],['permission:finance.manage']);
@@ -25,4 +26,7 @@ $router->group(['prefix'=>'/finance','middleware'=>['tenant','auth','permission:
     $router->get('/reconciliation',[ReconciliationController::class,'index'],['permission:finance.reports']);
     $router->post('/reconciliation/save',[ReconciliationController::class,'save'],['csrf','permission:finance.reports']);
     $router->post('/reconciliation/confirm',[ReconciliationController::class,'confirm'],['csrf','permission:finance.reports']);
+    $router->get('/payment-methods',[PaymentChannelController::class,'index'],['permission:finance.manage']);
+    $router->post('/payment-methods/save',[PaymentChannelController::class,'save'],['csrf','permission:finance.manage']);
+    $router->post('/payment-methods/delete',[PaymentChannelController::class,'delete'],['csrf','permission:finance.manage']);
 });
