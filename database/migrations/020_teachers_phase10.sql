@@ -1,9 +1,12 @@
--- Phase 10: activate the canonical teachers schema for CRUD and teaching assignments.
+-- Phase 10: complete the canonical teacher/teaching-assignment schema.
 ALTER TABLE teacher_subjects
+    DROP PRIMARY KEY,
+    ADD COLUMN IF NOT EXISTS id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST,
     ADD COLUMN IF NOT EXISTS class_id BIGINT UNSIGNED NULL AFTER subject_id,
     ADD COLUMN IF NOT EXISTS stream_id BIGINT UNSIGNED NULL AFTER class_id,
     ADD COLUMN IF NOT EXISTS periods_per_week TINYINT UNSIGNED NULL AFTER stream_id,
-    ADD COLUMN IF NOT EXISTS is_double TINYINT(1) NOT NULL DEFAULT 0 AFTER periods_per_week;
+    ADD COLUMN IF NOT EXISTS is_double TINYINT(1) NOT NULL DEFAULT 0 AFTER periods_per_week,
+    ADD PRIMARY KEY (id);
 
 INSERT INTO permissions (name, label, module_key) VALUES
     ('teachers.view', 'View teachers & staff', 'teachers'),
