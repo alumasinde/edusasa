@@ -6,10 +6,16 @@ use App\Core\Router;
 use Modules\Platform\Controllers\OnboardingController;
 use Modules\Platform\Controllers\PlatformAccessController;
 use Modules\Platform\Controllers\PlatformController;
+use Modules\Platform\Controllers\PlatformSetupController;
 use Modules\Platform\Controllers\SchoolAdminActivationController;
 use Modules\Platform\Controllers\SubscriptionController;
 
 /** @var Router $router */
+$router->get('/setup', [PlatformSetupController::class, 'create']);
+$router->post('/setup', [PlatformSetupController::class, 'store']);
+$router->get('/platform/login', [PlatformSetupController::class, 'loginForm']);
+$router->post('/platform/login', [PlatformSetupController::class, 'login']);
+$router->post('/platform/logout', [PlatformSetupController::class, 'logout']);
 $router->get('/school-admin/setup', [SchoolAdminActivationController::class, 'create']);
 $router->post('/school-admin/setup', [SchoolAdminActivationController::class, 'store']);
 
@@ -21,7 +27,6 @@ $router->group([
     $router->get('/schools',[PlatformController::class,'schoolPage']);
     $router->get('/schools/new',[OnboardingController::class,'create']);
     $router->post('/schools',[OnboardingController::class,'store']);
-
     $router->get('/entitlements',[PlatformController::class,'entitlementPage']);
     $router->get('/plans/{id}',[PlatformController::class,'planPage']);
     $router->post('/plans',[PlatformController::class,'savePlan']);
@@ -30,11 +35,9 @@ $router->group([
     $router->get('/schools/{id}/entitlements',[PlatformController::class,'schoolEntitlementsPage']);
     $router->post('/schools/{id}/entitlements',[PlatformController::class,'saveSchoolOverride']);
     $router->delete('/schools/{id}/entitlements',[PlatformController::class,'removeSchoolOverride']);
-
     $router->get('/subscriptions',[SubscriptionController::class,'index']);
     $router->post('/subscriptions/{schoolId}/plan',[SubscriptionController::class,'changePlan']);
     $router->post('/subscriptions/{id}/status',[SubscriptionController::class,'status']);
-
     $router->get('/access',[PlatformAccessController::class,'index']);
     $router->post('/access/roles',[PlatformAccessController::class,'saveRole']);
     $router->post('/access/roles/{id}',[PlatformAccessController::class,'saveRole']);
