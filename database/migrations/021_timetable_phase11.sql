@@ -48,7 +48,9 @@ CREATE TABLE IF NOT EXISTS timetable_entries (
     CONSTRAINT fk_tt_entry_period FOREIGN KEY (period_id) REFERENCES timetable_periods(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT INTO timetable_periods (school_id,period_no,name,starts_at,ends_at,is_break)
+-- Seed standard timetable periods for every school.
+-- INSERT ... SELECT ... ON DUPLICATE KEY UPDATE is avoided for MariaDB compatibility.
+INSERT IGNORE INTO timetable_periods (school_id,period_no,name,starts_at,ends_at,is_break)
 SELECT s.id,v.period_no,v.name,v.starts_at,v.ends_at,v.is_break
 FROM schools s
 CROSS JOIN (
@@ -62,8 +64,23 @@ CROSS JOIN (
     SELECT 8,'Lunch','12:30:00','13:30:00',1 UNION ALL
     SELECT 9,'Period 7','13:30:00','14:10:00',0 UNION ALL
     SELECT 10,'Period 8','14:10:00','14:50:00',0
-) v
-ON DUPLICATE KEY UPDATE name=VALUES(name),starts_at=VALUES(starts_at),ends_at=VALUES(ends_at),is_break=VALUES(is_break);
+) v;
+
+-- Keep seeded period definitions current without INSERT ... ON DUPLICATE KEY UPDATE.
+UPDATE timetable_periods p
+INNER JOIN (
+    SELECT 1 period_no,'Period 1' name,'08:00:00' starts_at,'08:40:00' ends_at,0 is_break UNION ALL
+    SELECT 2,'Period 2','08:40:00','09:20:00',0 UNION ALL
+    SELECT 3,'Period 3','09:20:00','10:00:00',0 UNION ALL
+    SELECT 4,'Break','10:00:00','10:30:00',1 UNION ALL
+    SELECT 5,'Period 4','10:30:00','11:10:00',0 UNION ALL
+    SELECT 6,'Period 5','11:10:00','11:50:00',0 UNION ALL
+    SELECT 7,'Period 6','11:50:00','12:30:00',0 UNION ALL
+    SELECT 8,'Lunch','12:30:00','13:30:00',1 UNION ALL
+    SELECT 9,'Period 7','13:30:00','14:10:00',0 UNION ALL
+    SELECT 10,'Period 8','14:10:00','14:50:00',0
+) v ON v.period_no=p.period_no
+SET p.name=v.name,p.starts_at=v.starts_at,p.ends_at=v.ends_at,p.is_break=v.is_break;
 
 INSERT INTO permissions (name,label,module_key) VALUES
 ('timetable.view','View timetables','timetable'),
