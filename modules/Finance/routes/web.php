@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Modules\Finance\Controllers\FinanceController;
 use Modules\Finance\Controllers\FeeStructureController;
 use Modules\Finance\Controllers\StudentLedgerController;
+use Modules\Finance\Controllers\ReconciliationController;
 $router->group(['prefix'=>'/finance','middleware'=>['tenant','auth','permission:finance.view,finance.manage']],function($router){
     $router->get('',[FinanceController::class,'index']);
     $router->get('/categories',[FinanceController::class,'categories'],['permission:finance.manage']);
@@ -21,4 +22,7 @@ $router->group(['prefix'=>'/finance','middleware'=>['tenant','auth','permission:
     $router->post('/fee-structures',[FeeStructureController::class,'store'],['csrf','permission:finance.manage']);
     $router->post('/fee-structures/publish',[FeeStructureController::class,'publish'],['csrf','permission:finance.manage']);
     $router->post('/fee-structures/generate',[FeeStructureController::class,'generate'],['csrf','permission:finance.manage']);
+    $router->get('/reconciliation',[ReconciliationController::class,'index'],['permission:finance.reports']);
+    $router->post('/reconciliation/save',[ReconciliationController::class,'save'],['csrf','permission:finance.reports']);
+    $router->post('/reconciliation/confirm',[ReconciliationController::class,'confirm'],['csrf','permission:finance.reports']);
 });
