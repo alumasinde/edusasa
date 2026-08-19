@@ -16,11 +16,11 @@ ALTER TABLE guardians
     ADD KEY IF NOT EXISTS idx_guardians_user(user_id);
 
 ALTER TABLE student_guardians
+    ADD COLUMN IF NOT EXISTS id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST,
     ADD COLUMN IF NOT EXISTS deleted_at DATETIME NULL AFTER created_at,
-    ADD COLUMN IF NOT EXISTS updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER deleted_at;
+    ADD COLUMN IF NOT EXISTS updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    ADD UNIQUE KEY IF NOT EXISTS uq_student_guardian_id(id);
 
--- User creation flows may initially create an account before the password is set
--- through the one-time reset flow. Names are populated by the originating record.
 ALTER TABLE users
     MODIFY first_name VARCHAR(100) NOT NULL DEFAULT '',
     MODIFY last_name VARCHAR(100) NOT NULL DEFAULT '',
