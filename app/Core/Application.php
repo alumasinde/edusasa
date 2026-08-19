@@ -13,6 +13,7 @@ use App\Core\Middleware\PlatformHostMiddleware;
 use App\Core\Middleware\RoleMiddleware;
 use App\Core\Middleware\TenantResolver;
 use Modules\Platform\Services\SchoolEntitlementService;
+use PDOException;
 
 class Application
 {
@@ -60,18 +61,94 @@ class Application
 
     private function registerErrorHandling(): void
     {
-        $debug = Config::env('APP_DEBUG', false) === true;
-        set_exception_handler(function (\Throwable $e) use ($debug): void {
-            Logger::error($e->getMessage(), ['trace' => $e->getTraceAsString()]);
-            $wantsJson = str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/api/');
-            http_response_code(500);
-            if ($wantsJson) {
-                header('Content-Type: application/json');
-                echo json_encode(['success' => false, 'message' => $debug ? $e->getMessage() : 'An unexpected error occurred.']);
-                return;
-            }
-            echo $debug ? '<pre>' . htmlspecialchars((string) $e) . '</pre>' : 'Something went wrong. Please try again shortly.';
+        set_exception_handler(function (\Throwable $e): void {
+            $this->logException($e);
+            $request = new Request();
+            $this->sendSafeError($e, $request);
         });
+
+        set_error_handler(function (int $severity, string $message, string $file, int $line): bool {
+            if (!(error_reporting() & $severity)) {
+                return false;
+            }
+
+            $exception = new \ErrorException($message, 0, $severity, $file, $line);
+            $this->logException($exception);
+            return false;
+        });
+    }
+
+    private function logException(\Throwable $e): void
+    {
+        Logger::error($e->getMessage(), [
+            'exception' => $e::class,
+            'trace' => $e->getTraceAsString(),
+            'request_uri' => $_SERVER['REQUEST_URI'] ?? '/',
+            'method' => $_SERVER['REQUEST_METHOD'] ?? 'CLI',
+            'host' => $_SERVER['HTTP_HOST'] ?? 'unknown',
+        ]);
+    }
+
+    private function sendSafeError(\Throwable $e, Request $request): void
+    {
+        $status = $this->statusForException($e);
+        $message = $this->userMessageForException($e, $status);
+        $reference = strtoupper(bin2hex(random_bytes(4)));
+
+        if ($request->isApi()) {
+            Response::json([
+                'success' => false,
+                'message' => $message,
+                'reference' => $reference,
+            ], $status)->send();
+            return;
+        }
+
+        $view = match ($status) {
+            401 => 'errors.unauthorized',
+            403 => 'errors.forbidden',
+            404 => 'errors.404',
+            503 => 'errors.503',
+            default => 'errors.500',
+        };
+
+        try {
+            Response::view($view, [
+                'message' => $message,
+                'reference' => $reference,
+                'host' => $_SERVER['HTTP_HOST'] ?? '',
+            ], $status)->send();
+        } catch (\Throwable $renderError) {
+            Logger::error($renderError->getMessage(), [
+                'exception' => $renderError::class,
+                'trace' => $renderError->getTraceAsString(),
+                'original_exception' => $e::class,
+            ]);
+            Response::html($message, $status)->send();
+        }
+    }
+
+    private function statusForException(\Throwable $e): int
+    {
+        return match (true) {
+            $e instanceof UnauthorizedException => 401,
+            $e instanceof ForbiddenException => 403,
+            $e instanceof NotFoundException,
+            $e instanceof TenantNotResolvedException => 404,
+            $e instanceof PDOException => 503,
+            default => 500,
+        };
+    }
+
+    private function userMessageForException(\Throwable $e, int $status): string
+    {
+        return match ($status) {
+            401 => 'Please sign in to continue.',
+            403 => 'You do not have permission to access this page.',
+            404 => 'The page or school you requested could not be found.',
+            503 => 'EduSasa is temporarily unable to complete that request. Please try again shortly.',
+            default => 'Something went wrong while processing your request. Please try again shortly.',
+        };
     }
 
     public function loadModules(array $modules): void
@@ -93,15 +170,21 @@ class Application
                 $response = Response::redirect($_SERVER['HTTP_REFERER'] ?? '/');
             }
         } catch (UnauthorizedException) {
-            $response = Response::redirect('/login');
+            $response = $request->isApi()
+                ? Response::json(['success' => false, 'message' => 'Please sign in to continue.'], 401)
+                : Response::view('errors.unauthorized', ['message' => 'Please sign in to continue.'], 401);
         } catch (ForbiddenException $e) {
             $response = $request->isApi()
-                ? Response::json(['success' => false, 'message' => $e->getMessage()], 403)
-                : Response::view('errors.forbidden', ['message' => $e->getMessage()], 403);
+                ? Response::json(['success' => false, 'message' => 'You do not have permission to access this page.'], 403)
+                : Response::view('errors.forbidden', ['message' => 'You do not have permission to access this page.'], 403);
         } catch (NotFoundException $e) {
             $response = $request->isApi()
-                ? Response::json(['success' => false, 'message' => $e->getMessage()], 404)
-                : Response::html('Not found', 404);
+                ? Response::json(['success' => false, 'message' => 'The page you requested could not be found.'], 404)
+                : Response::view('errors.404', ['message' => 'The page you requested could not be found.'], 404);
+        } catch (\Throwable $e) {
+            $this->logException($e);
+            $this->sendSafeError($e, $request);
+            return;
         }
         $response->send();
     }
