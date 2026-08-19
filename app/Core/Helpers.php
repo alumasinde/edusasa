@@ -42,3 +42,22 @@ if (!function_exists('env')) {
         };
     }
 }
+
+if (!function_exists('url')) {
+    function url(string $path = ''): string
+    {
+        if (preg_match('#^https?://#i', $path)) {
+            return $path;
+        }
+
+        $base = rtrim((string) env('APP_URL', ''), '/');
+        if ($base === '') {
+            $https = !empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off';
+            $scheme = $https ? 'https' : 'http';
+            $host = (string) ($_SERVER['HTTP_HOST'] ?? 'localhost');
+            $base = $scheme . '://' . $host;
+        }
+
+        return $base . '/' . ltrim($path, '/');
+    }
+}
