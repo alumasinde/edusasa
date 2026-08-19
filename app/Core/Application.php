@@ -12,6 +12,7 @@ use App\Core\Middleware\PlatformAuthMiddleware;
 use App\Core\Middleware\PlatformHostMiddleware;
 use App\Core\Middleware\RoleMiddleware;
 use App\Core\Middleware\TenantResolver;
+use Modules\Platform\Services\SchoolEntitlementService;
 
 class Application
 {
@@ -34,7 +35,13 @@ class Application
         $this->container->singleton(Database::class, fn () => Database::getInstance());
         $this->container->singleton(Auth::class, fn (Container $c) => new Auth($c->make(Database::class)));
         $this->container->singleton(Authorization::class, fn (Container $c) => new Authorization($c->make(Auth::class), $c->make(Database::class)));
-        $this->container->singleton(TenantResolver::class, fn (Container $c) => new TenantResolver($c->make(Database::class)));
+        $this->container->singleton(
+            TenantResolver::class,
+            fn (Container $c) => new TenantResolver(
+                $c->make(Database::class),
+                $c->make(SchoolEntitlementService::class)
+            )
+        );
         Notifications::register('log', new LogChannel());
         Notifications::register('email', new EmailChannel());
     }
