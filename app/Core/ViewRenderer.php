@@ -34,8 +34,8 @@ final class ViewRenderer
 
     private static function injectAssets(string $html): string
     {
-        $css = '/assets/css/app.css?v=19';
-        $js = '/assets/js/app.js?v=19';
+        $css = '/assets/css/app.css?v=20';
+        $js = '/assets/js/app.js?v=20';
         $tags = '<link rel="stylesheet" href="' . $css . '">' .
             '<link rel="icon" type="image/svg+xml" href="/assets/images/favicon.svg">' .
             '<script src="' . $js . '" defer></script>';
