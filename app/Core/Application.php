@@ -12,7 +12,6 @@ use App\Core\Middleware\PlatformAuthMiddleware;
 use App\Core\Middleware\PlatformHostMiddleware;
 use App\Core\Middleware\RoleMiddleware;
 use App\Core\Middleware\TenantResolver;
-use Modules\Platform\Services\SchoolEntitlementService;
 
 class Application
 {
@@ -35,13 +34,7 @@ class Application
         $this->container->singleton(Database::class, fn () => Database::getInstance());
         $this->container->singleton(Auth::class, fn (Container $c) => new Auth($c->make(Database::class)));
         $this->container->singleton(Authorization::class, fn (Container $c) => new Authorization($c->make(Auth::class), $c->make(Database::class)));
-        $this->container->singleton(
-            TenantResolver::class,
-            fn (Container $c) => new TenantResolver(
-                $c->make(Database::class),
-                $c->make(SchoolEntitlementService::class)
-            )
-        );
+        $this->container->singleton(TenantResolver::class, fn (Container $c) => new TenantResolver($c->make(Database::class)));
         Notifications::register('log', new LogChannel());
         Notifications::register('email', new EmailChannel());
     }
@@ -61,7 +54,7 @@ class Application
     private function registerErrorHandling(): void
     {
         $debug = Config::env('APP_DEBUG', false) === true;
-        set_exception_handler(function (\Throwable $e) use ($debug): void {
+        set_exception_handler(function (\Throwable $e) use ($debug) {
             Logger::error($e->getMessage(), ['trace' => $e->getTraceAsString()]);
             $wantsJson = str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/api/');
             http_response_code(500);
@@ -85,11 +78,12 @@ class Application
         try {
             $response = $this->router->dispatch($request);
         } catch (ValidationException $e) {
-            $response = $request->isApi()
-                ? Response::json(['success' => false, 'errors' => $e->errors()], 422)
-                : Response::redirect($_SERVER['HTTP_REFERER'] ?? '/');
-            if (!$request->isApi()) {
-                Session::flash('error', array_values($e->errors())[0][0] ?? 'Please check the form and try again.');
+            if ($request->isApi()) {
+                $response = Response::json(['success' => false, 'errors' => $e->errors()], 422);
+            } else {
+                $firstError = array_values($e->errors())[0][0] ?? 'Please check the form and try again.';
+                Session::flash('error', $firstError);
+                $response = Response::redirect($_SERVER['HTTP_REFERER'] ?? '/');
             }
         } catch (UnauthorizedException) {
             $response = Response::redirect('/login');
