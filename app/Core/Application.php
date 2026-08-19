@@ -129,13 +129,14 @@ class Application
                 'host' => $_SERVER['HTTP_HOST'] ?? '',
             ], $status)->send();
         } catch (\Throwable $renderError) {
-            Logger::error($renderError->getMessage(), [
-                'reference' => $reference,
-                'exception' => $renderError::class,
-                'trace' => $renderError->getTraceAsString(),
-                'original_exception' => $e::class,
-            ]);
-            Response::html($message . ' Reference: ' . htmlspecialchars($reference, ENT_QUOTES, 'UTF-8'), $status)->send();
+            $this->logException($renderError, $reference);
+            Response::html(
+                '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>EduSasa</title></head><body style="font-family:system-ui;text-align:center;padding:60px;color:#172033"><h1>' .
+                htmlspecialchars($status === 404 ? 'Page not found' : 'Something went wrong', ENT_QUOTES, 'UTF-8') .
+                '</h1><p>' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8') . '</p><p>Reference: <strong>' .
+                htmlspecialchars($reference, ENT_QUOTES, 'UTF-8') . '</strong></p></body></html>',
+                $status
+            )->send();
         }
     }
 
@@ -180,18 +181,6 @@ class Application
                 Session::flash('error', $firstError);
                 $response = Response::redirect($_SERVER['HTTP_REFERER'] ?? '/');
             }
-        } catch (UnauthorizedException) {
-            $response = $request->isApi()
-                ? Response::json(['success' => false, 'message' => 'Please sign in to continue.'], 401)
-                : Response::view('errors.unauthorized', ['message' => 'Please sign in to continue.'], 401);
-        } catch (ForbiddenException $e) {
-            $response = $request->isApi()
-                ? Response::json(['success' => false, 'message' => 'You do not have permission to access this page.'], 403)
-                : Response::view('errors.forbidden', ['message' => 'You do not have permission to access this page.'], 403);
-        } catch (NotFoundException $e) {
-            $response = $request->isApi()
-                ? Response::json(['success' => false, 'message' => 'The page you requested could not be found.'], 404)
-                : Response::view('errors.404', ['message' => 'The page you requested could not be found.'], 404);
         } catch (\Throwable $e) {
             $reference = $this->newErrorReference();
             $this->logException($e, $reference);
