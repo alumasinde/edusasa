@@ -24,14 +24,18 @@ final class TenantResolver
             $row = $this->db->selectOne(
                 'SELECT * FROM schools
                  WHERE deleted_at IS NULL
-                   AND status=:status
-                   AND (domain=:host OR subdomain=:host)
+                   AND status = :status
+                   AND (domain = :domain OR subdomain = :subdomain)
                  LIMIT 1',
-                ['status'=>'active','host'=>$host]
+                [
+                    'status' => 'active',
+                    'domain' => $host,
+                    'subdomain' => $host,
+                ]
             );
 
             if ($row !== null) {
-                $access = $this->entitlements->resolve((int)$row['id']);
+                $access = $this->entitlements->resolve((int) $row['id']);
                 Tenant::set(Tenant::fromRow(
                     $row,
                     [],
