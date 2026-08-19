@@ -3,7 +3,6 @@
 /** @var array $attendance */
 /** @var array $recentAnnouncements */
 /** @var array $user */
-
 $labels = [
     'students' => 'Active Students',
     'teachers' => 'Active Teachers',
@@ -20,18 +19,49 @@ $firstName = trim((string)($user['first_name'] ?? ''));
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>EduSasa Dashboard</title>
-<style>
-body{font-family:system-ui,-apple-system,sans-serif;margin:0;background:#f5f7fb;color:#172033}.wrap{max-width:1280px;margin:auto;padding:28px}.top{display:flex;justify-content:space-between;gap:20px;align-items:center;margin-bottom:24px}.muted{color:#667085}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}.card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:18px}.value{font-size:28px;font-weight:750;margin-top:7px}.money{font-size:22px;font-weight:750;margin-top:7px}.layout{display:grid;grid-template-columns:1.2fr .8fr;gap:16px;margin-top:16px}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:12px;border-bottom:1px solid #eee}a{color:inherit;text-decoration:none}.links{display:flex;flex-wrap:wrap;gap:9px}.links a{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:9px 12px}.bar{height:9px;background:#eef1f5;border-radius:99px;overflow:hidden}.bar span{display:block;height:100%}.row{display:flex;justify-content:space-between;margin:8px 0}.present{background:#16803c}.absent{background:#c62828}.late{background:#d97706}.excused{background:#475569}@media(max-width:800px){.layout{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}}
-</style>
 </head>
-<body><main class="wrap">
-<div class="top"><div><h1>School Dashboard</h1><p class="muted"><?= $firstName!=='' ? 'Welcome back, '.htmlspecialchars($firstName).'.' : 'School operations overview.' ?></p></div><div class="links"><a href="/students">Students</a><a href="/teachers">Teachers</a><a href="/attendance">Attendance</a><a href="/finance">Finance</a><a href="/exams">Exams</a><a href="/timetable">Timetable</a><a href="/reports">Reports</a></div></div>
-<section class="grid">
-<?php foreach($labels as $key=>$label): ?><div class="card"><div class="muted"><?= htmlspecialchars($label) ?></div><div class="value"><?= htmlspecialchars((string)($stats[$key]??0)) ?></div></div><?php endforeach; ?>
-<div class="card"><div class="muted">Outstanding Fees</div><div class="money">KES <?= number_format((float)($stats['outstanding_fees']??0),2) ?></div></div>
-</section>
-<div class="layout">
-<section class="card"><h2>Today's Attendance</h2><?php $total=(int)($attendance['total']??0); foreach(['present'=>'Present','absent'=>'Absent','late'=>'Late','excused'=>'Excused'] as $key=>$label): $value=(int)($attendance[$key]??0); $percent=$total>0?round(($value/$total)*100,1):0; ?><div class="row"><span><?= $label ?></span><strong><?= $value ?> (<?= $percent ?>%)</strong></div><div class="bar"><span class="<?= $key ?>" style="width:<?= $percent ?>%"></span></div><?php endforeach; ?><?php if($total===0): ?><p class="muted">No attendance has been marked today.</p><?php endif; ?></section>
-<section class="card"><h2>Recent Announcements</h2><?php if(!$recentAnnouncements): ?><p class="muted">No published announcements yet.</p><?php else: ?><table><thead><tr><th>Title</th><th>Type</th><th>Date</th></tr></thead><tbody><?php foreach($recentAnnouncements as $item): ?><tr><td><?= htmlspecialchars((string)$item['title']) ?></td><td><?= htmlspecialchars((string)$item['type']) ?></td><td><?= htmlspecialchars((string)$item['published_at']) ?></td></tr><?php endforeach; ?></tbody></table><?php endif; ?></section>
+<body>
+<header class="topbar">
+    <a class="brand" href="/dashboard">EduSasa</a>
+    <button class="mobile-menu btn-small" type="button" data-mobile-menu aria-label="Toggle navigation">Menu</button>
+    <nav class="nav" data-nav>
+        <a href="/dashboard">Dashboard</a><a href="/students">Students</a><a href="/teachers">Teachers</a>
+        <a href="/attendance">Attendance</a><a href="/finance">Finance</a><a href="/exams">Exams</a><a href="/timetable">Timetable</a>
+    </nav>
+</header>
+<aside class="sidebar">
+    <div class="muted">School administration</div>
+    <a href="/dashboard">Dashboard</a><a href="/students">Students</a><a href="/teachers">Teachers</a>
+    <a href="/attendance">Attendance</a><a href="/exams">Examinations</a><a href="/timetable">Timetable</a>
+    <a href="/finance">Finance</a><a href="/reports">Reports</a><a href="/communication">Communication</a>
+    <a href="/settings">Settings</a>
+</aside>
+<main class="main-content">
+<div class="page-header">
+  <div><h1>School Dashboard</h1><p class="muted"><?= $firstName!=='' ? 'Welcome back, '.htmlspecialchars($firstName).'. Here is today’s operational overview.' : 'School operations overview.' ?></p></div>
+  <div class="actions"><a class="btn" href="/students">Manage students</a><a class="btn btn-secondary" href="/teachers">Manage teachers</a></div>
 </div>
-</main></body></html>
+<section class="grid grid-4" aria-label="School statistics">
+<?php foreach($labels as $key=>$label): ?>
+<article class="stat-card"><div class="muted"><?= htmlspecialchars($label) ?></div><div class="value"><?= htmlspecialchars((string)($stats[$key]??0)) ?></div></article>
+<?php endforeach; ?>
+<article class="stat-card"><div class="muted">Outstanding Fees</div><div class="value">KES <?= number_format((float)($stats['outstanding_fees']??0),2) ?></div></article>
+</section>
+<div class="grid grid-2" style="margin-top:16px">
+<section class="card"><h2>Today's Attendance</h2>
+<?php $total=(int)($attendance['total']??0); foreach(['present'=>'Present','absent'=>'Absent','late'=>'Late','excused'=>'Excused'] as $key=>$label): $value=(int)($attendance[$key]??0); $percent=$total>0?round(($value/$total)*100,1):0; $barColor=$key==='present'?'#16804b':($key==='absent'?'#c43232':($key==='late'?'#b54708':'#64748b')); ?>
+<div style="display:flex;justify-content:space-between;margin:12px 0 6px"><span><?= $label ?></span><strong><?= $value ?> (<?= $percent ?>%)</strong></div>
+<div style="height:8px;background:#eef2f6;border-radius:99px;overflow:hidden"><span style="display:block;height:100%;width:<?= $percent ?>%;background:<?= $barColor ?>"></span></div>
+<?php endforeach; ?>
+<?php if($total===0): ?><p class="muted" style="margin-top:14px">No attendance has been marked today.</p><?php endif; ?>
+</section>
+<section class="card"><div class="page-header" style="margin:0 0 12px"><div><h2>Recent Announcements</h2><p class="muted">Latest school communication.</p></div><a href="/communication">View all</a></div>
+<?php if(!$recentAnnouncements): ?><div class="empty-state">No published announcements yet.</div><?php else: ?>
+<div class="table-wrap"><table><thead><tr><th>Title</th><th>Type</th><th>Date</th></tr></thead><tbody>
+<?php foreach($recentAnnouncements as $item): ?><tr><td><strong><?= htmlspecialchars((string)$item['title']) ?></strong></td><td><span class="badge"><?= htmlspecialchars((string)$item['type']) ?></span></td><td><?= htmlspecialchars((string)$item['published_at']) ?></td></tr><?php endforeach; ?>
+</tbody></table></div>
+<?php endif; ?>
+</section>
+</div>
+</main>
+</body></html>
