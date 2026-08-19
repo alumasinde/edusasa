@@ -34,6 +34,19 @@ class Application
     private function registerCoreBindings(): void
     {
         $this->container->singleton(Database::class, fn () => Database::getInstance());
+        $this->container->singleton(PlatformDatabase::class, function (): PlatformDatabase {
+            /** @var DatabaseConnectionConfig $config */
+            $config = require $this->basePath . '/app/Config/platform_database.php';
+            return new PlatformDatabase($config);
+        });
+        $this->container->singleton(TenantDatabaseNameGenerator::class, fn () => new TenantDatabaseNameGenerator());
+        $this->container->singleton(TenantDatabaseManager::class, function (Container $c): TenantDatabaseManager {
+            return new TenantDatabaseManager(
+                $c->make(PlatformDatabase::class),
+                $c->make(TenantDatabaseNameGenerator::class),
+                require $this->basePath . '/app/Config/tenant_database.php',
+            );
+        });
         $this->container->singleton(Auth::class, fn (Container $c) => new Auth($c->make(Database::class)));
         $this->container->singleton(Authorization::class, fn (Container $c) => new Authorization($c->make(Auth::class), $c->make(Database::class)));
         $this->container->singleton(
@@ -71,7 +84,6 @@ class Application
             if (!(error_reporting() & $severity)) {
                 return false;
             }
-
             $exception = new \ErrorException($message, 0, $severity, $file, $line);
             $this->logException($exception, $this->newErrorReference());
             return false;
@@ -106,11 +118,7 @@ class Application
         $reference ??= $this->newErrorReference();
 
         if ($request->isApi()) {
-            Response::json([
-                'success' => false,
-                'message' => $message,
-                'reference' => $reference,
-            ], $status)->send();
+            Response::json(['success' => false, 'message' => $message, 'reference' => $reference], $status)->send();
             return;
         }
 
@@ -123,20 +131,10 @@ class Application
         };
 
         try {
-            Response::view($view, [
-                'message' => $message,
-                'reference' => $reference,
-                'host' => $_SERVER['HTTP_HOST'] ?? '',
-            ], $status)->send();
+            Response::view($view, ['message' => $message, 'reference' => $reference, 'host' => $_SERVER['HTTP_HOST'] ?? ''], $status)->send();
         } catch (\Throwable $renderError) {
             $this->logException($renderError, $reference);
-            Response::html(
-                '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>EduSasa</title></head><body style="font-family:system-ui;text-align:center;padding:60px;color:#172033"><h1>' .
-                htmlspecialchars($status === 404 ? 'Page not found' : 'Something went wrong', ENT_QUOTES, 'UTF-8') .
-                '</h1><p>' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8') . '</p><p>Reference: <strong>' .
-                htmlspecialchars($reference, ENT_QUOTES, 'UTF-8') . '</strong></p></body></html>',
-                $status
-            )->send();
+            Response::html('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>EduSasa</title></head><body style="font-family:system-ui;text-align:center;padding:60px;color:#172033"><h1>' . htmlspecialchars($status === 404 ? 'Page not found' : 'Something went wrong', ENT_QUOTES, 'UTF-8') . '</h1><p>' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8') . '</p><p>Reference: <strong>' . htmlspecialchars($reference, ENT_QUOTES, 'UTF-8') . '</strong></p></body></html>', $status)->send();
         }
     }
 
@@ -145,8 +143,7 @@ class Application
         return match (true) {
             $e instanceof UnauthorizedException => 401,
             $e instanceof ForbiddenException => 403,
-            $e instanceof NotFoundException,
-            $e instanceof TenantNotResolvedException => 404,
+            $e instanceof NotFoundException, $e instanceof TenantNotResolvedException => 404,
             $e instanceof PDOException => 503,
             default => 500,
         };
