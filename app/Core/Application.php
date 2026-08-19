@@ -62,9 +62,9 @@ class Application
     private function registerErrorHandling(): void
     {
         set_exception_handler(function (\Throwable $e): void {
-            $this->logException($e);
-            $request = new Request();
-            $this->sendSafeError($e, $request);
+            $reference = $this->newErrorReference();
+            $this->logException($e, $reference);
+            $this->sendSafeError($e, new Request(), $reference);
         });
 
         set_error_handler(function (int $severity, string $message, string $file, int $line): bool {
@@ -73,14 +73,24 @@ class Application
             }
 
             $exception = new \ErrorException($message, 0, $severity, $file, $line);
-            $this->logException($exception);
+            $this->logException($exception, $this->newErrorReference());
             return false;
         });
     }
 
-    private function logException(\Throwable $e): void
+    private function newErrorReference(): string
+    {
+        try {
+            return strtoupper(bin2hex(random_bytes(4)));
+        } catch (\Throwable) {
+            return strtoupper(substr(hash('sha256', microtime(true) . uniqid('', true)), 0, 8));
+        }
+    }
+
+    private function logException(\Throwable $e, ?string $reference = null): void
     {
         Logger::error($e->getMessage(), [
+            'reference' => $reference,
             'exception' => $e::class,
             'trace' => $e->getTraceAsString(),
             'request_uri' => $_SERVER['REQUEST_URI'] ?? '/',
@@ -89,11 +99,11 @@ class Application
         ]);
     }
 
-    private function sendSafeError(\Throwable $e, Request $request): void
+    private function sendSafeError(\Throwable $e, Request $request, ?string $reference = null): void
     {
         $status = $this->statusForException($e);
         $message = $this->userMessageForException($e, $status);
-        $reference = strtoupper(bin2hex(random_bytes(4)));
+        $reference ??= $this->newErrorReference();
 
         if ($request->isApi()) {
             Response::json([
@@ -120,11 +130,12 @@ class Application
             ], $status)->send();
         } catch (\Throwable $renderError) {
             Logger::error($renderError->getMessage(), [
+                'reference' => $reference,
                 'exception' => $renderError::class,
                 'trace' => $renderError->getTraceAsString(),
                 'original_exception' => $e::class,
             ]);
-            Response::html($message, $status)->send();
+            Response::html($message . ' Reference: ' . htmlspecialchars($reference, ENT_QUOTES, 'UTF-8'), $status)->send();
         }
     }
 
@@ -182,8 +193,9 @@ class Application
                 ? Response::json(['success' => false, 'message' => 'The page you requested could not be found.'], 404)
                 : Response::view('errors.404', ['message' => 'The page you requested could not be found.'], 404);
         } catch (\Throwable $e) {
-            $this->logException($e);
-            $this->sendSafeError($e, $request);
+            $reference = $this->newErrorReference();
+            $this->logException($e, $reference);
+            $this->sendSafeError($e, $request, $reference);
             return;
         }
         $response->send();
